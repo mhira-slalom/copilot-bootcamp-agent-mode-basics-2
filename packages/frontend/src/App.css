@@ -73,6 +73,24 @@ li:last-child {
   border-bottom: none;
 }
 
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-button {
+  background-color: #f44336;
+  color: white;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+  background-color: #d32f2f;
+}
+
 .error {
   color: #d32f2f;
   font-weight: bold;
