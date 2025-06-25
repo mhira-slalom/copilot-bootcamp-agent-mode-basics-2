@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const Database = require('better-sqlite3');
+const logger = require('./utils/logger');
 
 // Initialize express app
 const app = express();
@@ -34,7 +35,7 @@ initialItems.forEach((item) => {
   insertStmt.run(item);
 });
 
-console.log('In-memory database initialized with sample data');
+logger.info('In-memory database initialized with sample data');
 
 // API Routes
 app.get('/api/items', (req, res) => {
@@ -42,7 +43,7 @@ app.get('/api/items', (req, res) => {
     const items = db.prepare('SELECT * FROM items ORDER BY created_at DESC').all();
     res.json(items);
   } catch (error) {
-    console.error('Error fetching items:', error);
+    logger.error('Error fetching items:', error);
     res.status(500).json({ error: 'Failed to fetch items' });
   }
 });
@@ -61,7 +62,7 @@ app.post('/api/items', (req, res) => {
     const newItem = db.prepare('SELECT * FROM items WHERE id = ?').get(id);
     res.status(201).json(newItem);
   } catch (error) {
-    console.error('Error creating item:', error);
+    logger.error('Error creating item:', error);
     res.status(500).json({ error: 'Failed to create item' });
   }
 });
@@ -87,7 +88,7 @@ app.delete('/api/items/:id', (req, res) => {
 
     res.status(200).json({ message: 'Item deleted successfully' });
   } catch (error) {
-    console.error('Error deleting item:', error);
+    logger.error('Error deleting item:', error);
     res.status(500).json({ error: 'Failed to delete item' });
   }
 });

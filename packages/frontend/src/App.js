@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logger from './utils/logger';
 import './App.css';
 
 function App() {
@@ -23,7 +24,7 @@ function App() {
       setError(null);
     } catch (err) {
       setError('Failed to fetch data: ' + err.message);
-      console.error('Error fetching data:', err);
+      logger.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ function App() {
       setNewItem('');
     } catch (err) {
       setError('Error adding item: ' + err.message);
-      console.error('Error adding item:', err);
+      logger.error('Error adding item:', err);
     }
   };
 
@@ -69,7 +70,7 @@ function App() {
       setData(data.filter((item) => item.id !== id));
     } catch (err) {
       setError('Error deleting item: ' + err.message);
-      console.error('Error deleting item:', err);
+      logger.error('Error deleting item:', err);
     }
   };
 
