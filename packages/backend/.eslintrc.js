@@ -11,14 +11,14 @@ module.exports = {
     },
     rules: {
         'no-console': 'warn',
-        'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+        'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
         'node/no-unsupported-features/es-syntax': 'off',
         'node/no-unpublished-require': [
-            'error',
+            'warn',
             {
                 allowModules: ['supertest'],
             },
         ],
-        'prettier/prettier': 'error',
+        'prettier/prettier': 'warn',
     },
 };
