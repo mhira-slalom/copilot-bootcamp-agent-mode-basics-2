@@ -66,7 +66,7 @@ function App() {
       }
 
       // Update the UI by removing the deleted item
-      setData(data.filter((item) => item.id !== id));
+      setData(data.filter(item => item.id !== id));
     } catch (err) {
       setError('Error deleting item: ' + err.message);
       console.error('Error deleting item:', err);
@@ -79,7 +79,7 @@ function App() {
         <h1>Hello World</h1>
         <p>Connected to in-memory database</p>
       </header>
-
+      
       <main>
         <section className="add-item-section">
           <h2>Add New Item</h2>
@@ -104,7 +104,7 @@ function App() {
                 data.map((item) => (
                   <li key={item.id} className="item-row">
                     <span>{item.name}</span>
-                    <button
+                    <button 
                       onClick={() => handleDelete(item.id)}
                       className="delete-button"
                       aria-label={`Delete ${item.name}`}

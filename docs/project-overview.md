@@ -14,14 +14,12 @@ The project follows a monorepo architecture with the following structure:
 ## Technology Stack
 
 ### Frontend
-
 - React
 - React DOM
 - CSS for styling
 - Jest for testing
 
 ### Backend
-
 - Node.js
 - Express.js
 - Jest for testing
@@ -29,12 +27,10 @@ The project follows a monorepo architecture with the following structure:
 ## Getting Started
 
 ### Prerequisites
-
 - Node.js (v16 or higher)
 - npm (v7 or higher)
 
 ### Installation
-
 1. Clone the repository
 2. Run `npm install` at the root of the project to install all dependencies
 3. Start the development environment using `npm run start`
@@ -54,7 +50,6 @@ Deployment instructions and environments will be covered in the bootcamp session
 ## Next Steps
 
 Refer to the other documentation files for more detailed guidance:
-
 - [General Guidelines](./general-guidelines.md)
 - [Code Style](./code-style.md)
 - [Testing Practices](./testing-practices.md)
