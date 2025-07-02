@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
+  IconButton,
+  Typography,
+  CircularProgress
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 function App() {
   const [data, setData] = useState([]);
@@ -75,48 +89,85 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>Hello World</h1>
-        <p>Connected to in-memory database</p>
-      </header>
+      <Paper elevation={3} sx={{ padding: 3, marginBottom: 4, backgroundColor: '#282c34', color: 'white' }}>
+        <Typography variant="h3" component="h1" gutterBottom>
+          Hello World
+        </Typography>
+        <Typography variant="body1">
+          Connected to in-memory database
+        </Typography>
+      </Paper>
 
-      <main>
+      <main style={{ padding: '0 16px' }}>
         <section className="add-item-section">
-          <h2>Add New Item</h2>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              value={newItem}
-              onChange={e => setNewItem(e.target.value)}
-              placeholder="Enter item name"
-            />
-            <button type="submit">Add Item</button>
-          </form>
+          <Typography variant="h5" component="h2" gutterBottom>
+            Add New Item
+          </Typography>
+          <Paper elevation={1} sx={{ padding: 2, marginBottom: 3 }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="text"
+                value={newItem}
+                onChange={e => setNewItem(e.target.value)}
+                placeholder="Enter item name"
+                style={{ padding: '8px', flexGrow: 1 }}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={!newItem.trim()}
+              >
+                Add Item
+              </Button>
+            </form>
+          </Paper>
         </section>
 
         <section className="items-section">
-          <h2>Items from Database</h2>
-          {loading && <p>Loading data...</p>}
-          {error && <p className="error">{error}</p>}
+          <Typography variant="h5" component="h2" gutterBottom>
+            Items from Database
+          </Typography>
+          {loading && <CircularProgress />}
+          {error && <Typography color="error">{error}</Typography>}
           {!loading && !error && (
-            <ul>
-              {data.length > 0 ? (
-                data.map(item => (
-                  <li key={item.id} className="item-row">
-                    <span>{item.name}</span>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="delete-button"
-                      aria-label={`Delete ${item.name}`}
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <p>No items found. Add some!</p>
-              )}
-            </ul>
+            <TableContainer component={Paper} elevation={2}>
+              <Table aria-label="items table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Item Name</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.length > 0 ? (
+                    data.map(item => (
+                      <TableRow key={item.id}>
+                        <TableCell component="th" scope="row">
+                          {item.name}
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton
+                            onClick={() => handleDelete(item.id)}
+                            aria-label={`Delete ${item.name}`}
+                            color="error"
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} align="center">
+                        <Typography>No items found. Add some!</Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </section>
       </main>
