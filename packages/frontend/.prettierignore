@@ -1,6 +1,0 @@
-# Frontend Prettier ignore file
-node_modules/
-build/
-coverage/
-*.min.js
-public/

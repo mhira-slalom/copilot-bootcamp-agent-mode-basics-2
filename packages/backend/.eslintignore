@@ -1,4 +1,0 @@
-# Backend ESLint ignore file
-node_modules/
-dist/
-coverage/

@@ -1,4 +1,0 @@
-# Frontend ESLint ignore file
-node_modules/
-build/
-coverage/
