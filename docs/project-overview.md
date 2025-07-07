@@ -17,6 +17,7 @@ The project follows a monorepo architecture with the following structure:
 
 - React
 - React DOM
+- Material-UI (MUI) for UI components
 - CSS for styling
 - Jest for testing
 
@@ -58,3 +59,4 @@ Refer to the other documentation files for more detailed guidance:
 - [General Guidelines](./general-guidelines.md)
 - [Code Style](./code-style.md)
 - [Testing Practices](./testing-practices.md)
+- [MUI Guidelines](./mui-guidelines.md)
