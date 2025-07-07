@@ -1,6 +1,16 @@
 # Material-UI Guidelines
 
-This document outlines the guidelines for using Material-UI (MUI) components in this project.
+This document outlines the guidelines for using Material-UI (MUI) components in this project. 
+
+## Installation
+
+To use Material-UI in your project, you need to install the required packages:
+
+```bash
+npm install @mui/material @mui/icons-material @emotion/react @emotion/styled
+```
+
+The `@mui/material` package contains the core components, while `@mui/icons-material` provides the icon set.
 
 ## General Principles
 
@@ -10,6 +20,18 @@ This document outlines the guidelines for using Material-UI (MUI) components in 
 - Keep components simple and focused on a single responsibility
 
 ## Component Usage
+
+When using MUI components, make sure to import them from the `@mui/material` package:
+
+```javascript
+import { 
+  Button, 
+  TextField, 
+  Grid, 
+  Paper,
+  Typography 
+} from '@mui/material';
+```
 
 ### Layout Components
 
