@@ -1,5 +1,5 @@
 import React, { act } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';
@@ -77,8 +77,48 @@ describe('App Component', () => {
     });
   });
 
+  test('fetches items from API on initial load', async () => {
+    // Create a spy for fetch
+    const mockFetch = jest.spyOn(global, 'fetch');
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    // Check that fetch was called with the correct URL
+    expect(mockFetch).toHaveBeenCalledWith('/api/items');
+
+    // Wait for items to load
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    // Clean up
+    mockFetch.mockRestore();
+  });
+
+  test('displays items in a table format', async () => {
+    await act(async () => {
+      render(<App />);
+    });
+
+    // Wait for items to load
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    // Check for table headers
+    expect(screen.getByText('Item Name')).toBeInTheDocument();
+    expect(screen.getByText('Actions')).toBeInTheDocument();
+
+    // Check for table rows
+    const tableRows = screen.getAllByRole('row');
+    expect(tableRows.length).toBeGreaterThan(1); // Header + at least one data row
+  });
+
   test('adds a new item', async () => {
     const user = userEvent.setup();
+    const mockFetch = jest.spyOn(global, 'fetch');
 
     await act(async () => {
       render(<App />);
@@ -100,10 +140,55 @@ describe('App Component', () => {
       await user.click(submitButton);
     });
 
+    // Check that the fetch was called with POST method
+    expect(mockFetch).toHaveBeenCalledWith('/api/items', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'New Test Item' }),
+    });
+
     // Check that the new item appears
     await waitFor(() => {
       expect(screen.getByText('New Test Item')).toBeInTheDocument();
     });
+
+    // Clean up
+    mockFetch.mockRestore();
+  });
+
+  test('submit button is disabled for empty input', async () => {
+    await act(async () => {
+      render(<App />);
+    });
+
+    // Wait for items to load
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    // Check that the submit button is disabled
+    const submitButton = screen.getByText('Add Item');
+    expect(submitButton).toBeDisabled();
+
+    // Get input field and type something to enable the button
+    const input = screen.getByPlaceholderText('Enter item name');
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'Test' } });
+    });
+
+    // Button should now be enabled
+    expect(submitButton).not.toBeDisabled();
+
+    // Clear the input
+    await act(async () => {
+      fireEvent.change(input, { target: { value: '' } });
+    });
+
+    // Button should be disabled again
+    expect(submitButton).toBeDisabled();
   });
 
   test('handles API error', async () => {
@@ -124,7 +209,7 @@ describe('App Component', () => {
     });
   });
 
-  test('shows empty state when no items', async () => {
+  test('shows empty state message when no items', async () => {
     // Override the default handler to return empty array
     server.use(
       rest.get('/api/items', (req, res, ctx) => {
@@ -136,10 +221,14 @@ describe('App Component', () => {
       render(<App />);
     });
 
-    // Wait for empty state message
+    // Wait for the table to load
     await waitFor(() => {
-      expect(screen.getByText('No items found. Add some!')).toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
     });
+
+    // Check for the empty state message
+    expect(screen.getByText('No items found. Add some!')).toBeInTheDocument();
   });
 
   test('deletes an item when delete button is clicked', async () => {

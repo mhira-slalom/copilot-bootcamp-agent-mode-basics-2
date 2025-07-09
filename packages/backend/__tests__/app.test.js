@@ -23,6 +23,23 @@ describe('API Endpoints', () => {
       expect(item).toHaveProperty('name');
       expect(item).toHaveProperty('created_at');
     });
+
+    it('should handle errors when fetching items', async () => {
+      // Create a temporary error condition by mocking db.prepare to throw an error
+      const originalPrepare = db.prepare;
+      db.prepare = jest.fn(() => {
+        throw new Error('Database error');
+      });
+
+      const response = await request(app).get('/api/items');
+
+      // Restore the original prepare method
+      db.prepare = originalPrepare;
+
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.error).toBe('Failed to fetch items');
+    });
   });
 
   describe('POST /api/items', () => {
@@ -59,6 +76,23 @@ describe('API Endpoints', () => {
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
       expect(response.body.error).toBe('Item name is required');
+    }); it('should handle errors when creating an item', async () => {
+      // Create a spy and implement a mock that throws an error
+      jest.spyOn(db, 'prepare').mockImplementationOnce(() => {
+        throw new Error('Database error');
+      });
+
+      const response = await request(app)
+        .post('/api/items')
+        .send({ name: 'Error Item' })
+        .set('Accept', 'application/json');
+
+      // Restore the original implementation
+      jest.restoreAllMocks();
+
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.error).toBe('Failed to create item');
     });
   });
 
@@ -95,6 +129,31 @@ describe('API Endpoints', () => {
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty('error');
       expect(response.body.error).toBe('Item not found');
+    });
+
+    it('should handle errors when deleting an item', async () => {
+      // First create an item to delete
+      const newItem = { name: 'Error Item' };
+      const createResponse = await request(app)
+        .post('/api/items')
+        .send(newItem)
+        .set('Accept', 'application/json');
+
+      const itemId = createResponse.body.id;
+
+      // Create a spy and implement a mock that throws an error
+      jest.spyOn(db, 'prepare').mockImplementationOnce(() => {
+        throw new Error('Database error');
+      });
+
+      const response = await request(app).delete(`/api/items/${itemId}`);
+
+      // Restore the original implementation
+      jest.restoreAllMocks();
+
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error');
+      expect(response.body.error).toBe('Failed to delete item');
     });
 
     it('should return 400 if id is invalid', async () => {
