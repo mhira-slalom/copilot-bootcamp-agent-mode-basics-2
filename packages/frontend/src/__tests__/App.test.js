@@ -5,7 +5,7 @@ import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 import App from '../App';
 
-// Mock server to intercept API requests
+// Integration testing setup with mock server to intercept API requests
 const server = setupServer(
   // GET /api/items handler
   rest.get('/api/items', (req, res, ctx) => {
@@ -53,7 +53,8 @@ beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-describe('App Component', () => {
+// Integration tests for the App component
+describe('App Component Integration Tests', () => {
   test('renders the header', async () => {
     await act(async () => {
       render(<App />);
@@ -237,8 +238,12 @@ describe('App Component', () => {
     expect(screen.getByText('No items found. Add some!')).toBeInTheDocument();
   });
 
-  test('deletes an item when delete button is clicked', async () => {
+  test('tests handleDelete functionality when delete item button is clicked', async () => {
+    // This integration test verifies the handleDelete function works correctly
     const user = userEvent.setup();
+
+    // Mock the fetch function to verify handleDelete API call
+    const mockFetch = jest.spyOn(global, 'fetch');
 
     await act(async () => {
       render(<App />);
@@ -250,20 +255,28 @@ describe('App Component', () => {
       expect(screen.getByText('Test Item 2')).toBeInTheDocument();
     });
 
-    // Find and click the delete button for Test Item 1
+    // Find and click the delete button for Test Item 1 to trigger handleDelete function
     const deleteButton = screen.getByLabelText('Delete Test Item 1');
     await act(async () => {
       await user.click(deleteButton);
     });
 
-    // Check that the item was removed from the UI
+    // Check that the item was removed from the UI after handleDelete success
     await waitFor(() => {
       expect(screen.queryByText('Test Item 1')).not.toBeInTheDocument();
       expect(screen.getByText('Test Item 2')).toBeInTheDocument();
     });
+
+    // Verify that the fetch was called with the correct URL for delete item operation
+    expect(mockFetch).toHaveBeenCalledWith('/api/items/1', expect.objectContaining({
+      method: 'DELETE'
+    }));
+
+    // Clean up
+    mockFetch.mockRestore();
   });
 
-  test('shows error when delete fails', async () => {
+  test('shows error when handleDelete fails to delete item', async () => {
     const user = userEvent.setup();
 
     // Spy on console.error to suppress the output
@@ -286,18 +299,51 @@ describe('App Component', () => {
       expect(screen.getByText('Test Item 1')).toBeInTheDocument();
     });
 
-    // Find and click a delete button
+    // Find and click a delete button to test error handling in handleDelete
     const deleteButton = screen.getByLabelText('Delete Test Item 1');
     await act(async () => {
       await user.click(deleteButton);
     });
 
-    // Check that the error message appears
+    // Check that the error message appears when delete item operation fails
     await waitFor(() => {
       expect(screen.getByText(/Error deleting item/)).toBeInTheDocument();
     });
 
     // Restore console.error
     consoleErrorSpy.mockRestore();
+  });
+
+  test('integration test for handleDelete with 404 not found response', async () => {
+    const user = userEvent.setup();
+
+    // Override the default delete handler to simulate a 404 not found error
+    server.use(
+      rest.delete('/api/items/:id', (req, res, ctx) => {
+        return res(ctx.status(404), ctx.json({ error: 'Item not found' }));
+      })
+    );
+
+    await act(async () => {
+      render(<App />);
+    });
+
+    // Wait for items to load
+    await waitFor(() => {
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.getByText('Test Item 1')).toBeInTheDocument();
+    });
+
+    // Find and click the delete button to test the handleDelete function
+    // This integration test checks that the delete item operation handles 404 errors correctly
+    const deleteButton = screen.getByLabelText('Delete Test Item 1');
+    await act(async () => {
+      await user.click(deleteButton);
+    });
+
+    // Check that an appropriate error message appears
+    await waitFor(() => {
+      expect(screen.getByText(/Error deleting item/)).toBeInTheDocument();
+    });
   });
 });
