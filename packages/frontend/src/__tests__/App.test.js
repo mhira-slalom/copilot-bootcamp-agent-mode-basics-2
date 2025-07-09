@@ -67,8 +67,8 @@ describe('App Component', () => {
       render(<App />);
     });
 
-    // Initially shows loading state
-    expect(screen.getByText('Loading data...')).toBeInTheDocument();
+    // Initially shows loading state (CircularProgress)
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
 
     // Wait for items to load
     await waitFor(() => {
@@ -156,9 +156,9 @@ describe('App Component', () => {
     });
 
     // Find and click the delete button for Test Item 1
-    const deleteButtons = screen.getAllByText('Delete');
+    const deleteButton = screen.getByLabelText('Delete Test Item 1');
     await act(async () => {
-      await user.click(deleteButtons[0]);
+      await user.click(deleteButton);
     });
 
     // Check that the item was removed from the UI
@@ -184,13 +184,14 @@ describe('App Component', () => {
 
     // Wait for items to load
     await waitFor(() => {
-      expect(screen.queryByText('Loading data...')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+      expect(screen.getByText('Test Item 1')).toBeInTheDocument();
     });
 
     // Find and click a delete button
-    const deleteButtons = screen.getAllByText('Delete');
+    const deleteButton = screen.getByLabelText('Delete Test Item 1');
     await act(async () => {
-      await user.click(deleteButtons[0]);
+      await user.click(deleteButton);
     });
 
     // Check that the error message appears
