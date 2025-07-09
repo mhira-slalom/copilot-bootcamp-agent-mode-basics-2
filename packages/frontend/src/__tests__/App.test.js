@@ -126,7 +126,7 @@ describe('App Component', () => {
 
     // Wait for items to load
     await waitFor(() => {
-      expect(screen.queryByText('Loading data...')).not.toBeInTheDocument();
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
     // Fill in the form and submit
