@@ -192,6 +192,9 @@ describe('App Component', () => {
   });
 
   test('handles API error', async () => {
+    // Spy on console.error to suppress the output
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
     // Override the default handler to simulate an error
     server.use(
       rest.get('/api/items', (req, res, ctx) => {
@@ -207,6 +210,9 @@ describe('App Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Failed to fetch data/)).toBeInTheDocument();
     });
+
+    // Restore console.error
+    consoleErrorSpy.mockRestore();
   });
 
   test('shows empty state message when no items', async () => {
@@ -260,6 +266,9 @@ describe('App Component', () => {
   test('shows error when delete fails', async () => {
     const user = userEvent.setup();
 
+    // Spy on console.error to suppress the output
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
     // Override the default delete handler to simulate an error
     server.use(
       rest.delete('/api/items/:id', (req, res, ctx) => {
@@ -287,5 +296,8 @@ describe('App Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Error deleting item/)).toBeInTheDocument();
     });
+
+    // Restore console.error
+    consoleErrorSpy.mockRestore();
   });
 });

@@ -25,6 +25,9 @@ describe('API Endpoints', () => {
     });
 
     it('should handle errors when fetching items', async () => {
+      // Spy on console.error to suppress the output
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
       // Create a temporary error condition by mocking db.prepare to throw an error
       const originalPrepare = db.prepare;
       db.prepare = jest.fn(() => {
@@ -35,6 +38,8 @@ describe('API Endpoints', () => {
 
       // Restore the original prepare method
       db.prepare = originalPrepare;
+      // Restore console.error
+      consoleErrorSpy.mockRestore();
 
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty('error');
@@ -77,6 +82,9 @@ describe('API Endpoints', () => {
       expect(response.body).toHaveProperty('error');
       expect(response.body.error).toBe('Item name is required');
     }); it('should handle errors when creating an item', async () => {
+      // Spy on console.error to suppress the output
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
       // Create a spy and implement a mock that throws an error
       jest.spyOn(db, 'prepare').mockImplementationOnce(() => {
         throw new Error('Database error');
@@ -89,6 +97,8 @@ describe('API Endpoints', () => {
 
       // Restore the original implementation
       jest.restoreAllMocks();
+      // Restore console.error
+      consoleErrorSpy.mockRestore();
 
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty('error');
@@ -132,6 +142,9 @@ describe('API Endpoints', () => {
     });
 
     it('should handle errors when deleting an item', async () => {
+      // Spy on console.error to suppress the output
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+
       // First create an item to delete
       const newItem = { name: 'Error Item' };
       const createResponse = await request(app)
@@ -150,6 +163,8 @@ describe('API Endpoints', () => {
 
       // Restore the original implementation
       jest.restoreAllMocks();
+      // Restore console.error
+      consoleErrorSpy.mockRestore();
 
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty('error');
