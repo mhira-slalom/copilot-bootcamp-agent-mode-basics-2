@@ -62,7 +62,7 @@ describe('App Component', () => {
     expect(screen.getByText('Connected to in-memory database')).toBeInTheDocument();
   });
 
-  test('loads and displays items from the API', async () => {
+  test('should load items from the API', async () => {
     await act(async () => {
       render(<App />);
     });
