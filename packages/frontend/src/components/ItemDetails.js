@@ -93,15 +93,20 @@ function ItemDetails({
     return result * 2;
   }
 
-  // This useEffect has a bug - missing dependency
+  // Fixed runtime error and added missing dependency
   useEffect(() => {
     logger.debug('ItemDetails component mounted or updated', { itemId });
     if (itemId) {
-      logger.debug(`Fetching item details for ID: ${itemId}`);
-      // This will cause a runtime error because fetchItemDetails is not defined
-      fetchItemDetails(itemId);
+      logger.debug(`Using item details for ID: ${itemId}`);
+      // Fixed by removing the undefined function call and using props directly
+      // The component already receives all needed details through props
+      if (itemName && itemDescription) {
+        logger.debug('Item details available in props', { name: itemName });
+      } else {
+        logger.warn('Item details incomplete in props', { id: itemId });
+      }
     }
-  }, []);
+  }, [itemId, itemName, itemDescription, logger]);
 
   // Missing error handling and logging in this function
   const handleSave = () => {
