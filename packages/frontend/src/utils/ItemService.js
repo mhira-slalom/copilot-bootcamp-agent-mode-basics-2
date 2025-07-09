@@ -47,34 +47,66 @@ class ItemService {
     this.logger.debug('ItemService initialized');
   }
 
-  // Function with too many parameters that should be refactored to use an options object
-  async createItemWithDetails(
-    name,
-    description,
-    category,
-    priority,
-    tags,
-    status,
-    dueDate,
-    assignee,
-    createdBy,
-    customFields,
-    permissions,
-    validationLevel,
-    notificationSettings,
-    auditEnabled,
-    backupEnabled,
-    versionControl,
-    metadata,
-    attachments,
-    dependencies,
-    estimatedHours,
-    actualHours,
-    budget,
-    currency,
-    location,
-    externalReferences
-  ) {
+  /**
+   * Create a new item with detailed options
+   *
+   * @param {Object} options - Item creation options
+   * @param {string} options.name - Item name
+   * @param {string} options.description - Item description
+   * @param {string} options.category - Item category
+   * @param {string} options.priority - Item priority level
+   * @param {Array} options.tags - Item tags
+   * @param {string} options.status - Item status
+   * @param {string} options.dueDate - Item due date
+   * @param {string} options.assignee - User assigned to the item
+   * @param {string} options.createdBy - User creating the item
+   * @param {Object} options.customFields - Additional custom fields
+   * @param {Object} options.permissions - Item access permissions
+   * @param {string} options.validationLevel - Level of validation to apply
+   * @param {Object} options.notificationSettings - Notification configuration
+   * @param {boolean} options.auditEnabled - Whether to enable audit logging
+   * @param {boolean} options.backupEnabled - Whether to enable item backups
+   * @param {Object} options.versionControl - Version control settings
+   * @param {Object} options.metadata - Additional metadata
+   * @param {Array} options.attachments - Item attachments
+   * @param {Array} options.dependencies - Item dependencies
+   * @param {number} options.estimatedHours - Estimated hours
+   * @param {number} options.actualHours - Actual hours spent
+   * @param {number} options.budget - Item budget
+   * @param {string} options.currency - Budget currency
+   * @param {Object} options.location - Item location
+   * @param {Object} options.externalReferences - External system references
+   * @returns {Promise<Object>} Created item
+   */
+  async createItemWithDetails(options) {
+    const {
+      name,
+      description,
+      category,
+      priority,
+      tags,
+      status,
+      dueDate,
+      assignee,
+      createdBy,
+      customFields,
+      permissions,
+      validationLevel,
+      notificationSettings,
+      auditEnabled,
+      backupEnabled,
+      versionControl,
+      metadata,
+      attachments,
+      dependencies,
+      estimatedHours,
+      actualHours,
+      budget,
+      currency,
+      location,
+      externalReferences
+    } = options;
+
     this.logger.debug('Creating item with details', {
       name,
       category,
@@ -83,55 +115,31 @@ class ItemService {
     });
 
     try {
-      // Missing input validation
-      this.logger.debug('Building item data object');
-      const itemData = {
-        name,
-        description,
-        category,
-        priority,
-        tags,
-        status,
-        dueDate,
-        assignee,
-        createdBy,
-        customFields,
-        permissions,
-        validationLevel,
-        notificationSettings,
-        auditEnabled,
-        backupEnabled,
-        versionControl,
-        metadata,
-        attachments,
-        dependencies,
-        estimatedHours,
-        actualHours,
-        budget,
-        currency,
-        location,
-        externalReferences
-      };
-
-      // Fixed runtime error - implemented basic validation inline
+      // Input validation
       this.logger.debug('Validating item data');
-      if (!itemData.name || !itemData.category) {
-        this.logger.error('Invalid item data', { missing: !itemData.name ? 'name' : 'category' });
+      if (!name || !category) {
+        this.logger.error('Invalid item data', {
+          missing: !name ? 'name' : 'category'
+        });
         throw new Error('Invalid item data: name and category are required');
       }
 
+      // Using the options object directly as the item data
       this.logger.debug('Sending item data to API');
       const response = await fetch(`${API_BASE_URL}/items`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(itemData),
+        body: JSON.stringify(options),
       });
 
       if (!response.ok) {
         // Added detailed error logging
-        this.logger.error('API error creating item', { status: response.status, statusText: response.statusText });
+        this.logger.error('API error creating item', {
+          status: response.status,
+          statusText: response.statusText
+        });
         throw new Error(`Failed to create item: ${response.status} ${response.statusText}`);
       }
 
@@ -151,48 +159,76 @@ class ItemService {
 
       return result;
     } catch (error) {
-      // Missing error logging and context
+      this.logger.error('Error creating item', { error: error.message });
       throw error;
     }
   }
 
-  // Another function with too many parameters
-  async updateItemWithValidation(
-    itemId,
-    updates,
-    validationRules,
-    userPermissions,
-    auditOptions,
-    notificationOptions,
-    backupOptions,
-    versioningOptions,
-    conflictResolution,
-    retryPolicy,
-    timeoutSettings,
-    cachingStrategy,
-    loggingLevel,
-    performanceTracking,
-    securityContext,
-    transactionOptions,
-    rollbackStrategy,
-    successCallbacks,
-    errorCallbacks,
-    progressCallbacks
-  ) {
-    // No logging of function entry
+  /**
+   * Update an item with validation and advanced options
+   *
+   * @param {Object} options - Update options
+   * @param {string} options.itemId - ID of the item to update
+   * @param {Object} options.updates - The item data to update
+   * @param {Object} options.validationRules - Rules for data validation
+   * @param {Array} options.userPermissions - Permissions of the current user
+   * @param {Object} options.auditOptions - Audit logging configuration
+   * @param {Object} options.notificationOptions - Notification settings
+   * @param {Object} options.backupOptions - Backup configuration
+   * @param {Object} options.versioningOptions - Versioning settings
+   * @param {string} options.conflictResolution - How to handle conflicts
+   * @param {Object} options.retryPolicy - Policy for retrying failed requests
+   * @param {Object} options.timeoutSettings - Request timeout configuration
+   * @param {Object} options.cachingStrategy - Strategy for caching
+   * @param {string} options.loggingLevel - Level of logging detail
+   * @param {boolean} options.performanceTracking - Whether to track performance
+   * @param {Object} options.securityContext - Security context
+   * @param {Object} options.transactionOptions - Transaction settings
+   * @param {Object} options.rollbackStrategy - Strategy for rollback on failure
+   * @param {Function[]} options.successCallbacks - Callbacks for success
+   * @param {Function[]} options.errorCallbacks - Callbacks for errors
+   * @param {Function[]} options.progressCallbacks - Callbacks for progress updates
+   * @returns {Promise<Object>} Updated item
+   */
+  async updateItemWithValidation(options) {
+    const {
+      itemId,
+      updates,
+      validationRules,
+      userPermissions,
+      auditOptions,
+      notificationOptions,
+      backupOptions,
+      versioningOptions,
+      conflictResolution,
+      retryPolicy,
+      timeoutSettings,
+      cachingStrategy,
+      loggingLevel,
+      performanceTracking,
+      securityContext,
+      transactionOptions,
+      rollbackStrategy,
+      successCallbacks,
+      errorCallbacks,
+      progressCallbacks
+    } = options;
+
+    this.logger.debug('Updating item with validation', { itemId });
 
     try {
-      this.logger.debug('Updating item with validation', { itemId });
-
-      // Fixed validation - implemented permissions check inline
+      // Validate permissions
       const hasPermission = userPermissions &&
         (userPermissions.includes('admin') || userPermissions.includes('edit'));
       if (!hasPermission) {
-        this.logger.warn('Insufficient permissions for update', { itemId, permissions: userPermissions });
+        this.logger.warn('Insufficient permissions for update', {
+          itemId,
+          permissions: userPermissions
+        });
         throw new Error('Insufficient permissions');
       }
 
-      // Fixed data preparation - implemented inline
+      // Prepare data for update
       let preparedData = { ...updates };
 
       // Apply validation rules if provided
@@ -220,6 +256,7 @@ class ItemService {
         }
       }
 
+      // Make API request to update the item
       const response = await fetch(`${API_BASE_URL}/items/${itemId}`, {
         method: 'PUT',
         headers: {
@@ -229,14 +266,18 @@ class ItemService {
       });
 
       if (!response.ok) {
-        // No detailed error information
-        throw new Error('Update failed');
+        this.logger.error('API error updating item', {
+          itemId,
+          status: response.status,
+          statusText: response.statusText
+        });
+        throw new Error(`Update failed: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
       this.logger.info('Item updated successfully', { itemId });
 
-      // Fixed audit logging - implemented inline
+      // Handle audit logging
       if (auditOptions && auditOptions.enabled) {
         this.logger.debug('Recording audit log for item update', {
           itemId,
@@ -246,7 +287,7 @@ class ItemService {
         // Audit logging logic would go here
       }
 
-      // Fixed notifications - implemented inline
+      // Send notifications
       if (notificationOptions && notificationOptions.enabled) {
         this.logger.debug('Sending notifications for updated item', {
           itemId,
@@ -255,7 +296,7 @@ class ItemService {
         // Notification logic would go here
       }
 
-      // Fixed cache update - implemented inline
+      // Update cache
       if (cachingStrategy) {
         this.logger.debug('Updating cache with new item data', { itemId });
         this.cache.set(itemId.toString(), {
@@ -264,9 +305,176 @@ class ItemService {
         });
       }
 
+      // Execute success callbacks
+      if (successCallbacks && Array.isArray(successCallbacks)) {
+        this.logger.debug('Executing success callbacks', { count: successCallbacks.length });
+        successCallbacks.forEach(callback => {
+          try {
+            callback(result);
+          } catch (callbackError) {
+            this.logger.warn('Error in success callback', { error: callbackError.message });
+          }
+        });
+      }
+
       return result;
     } catch (error) {
-      // Missing error logging and context
+      this.logger.error('Error updating item', { itemId, error: error.message });
+
+      // Execute error callbacks
+      if (errorCallbacks && Array.isArray(errorCallbacks)) {
+        this.logger.debug('Executing error callbacks', { count: errorCallbacks.length });
+        errorCallbacks.forEach(callback => {
+          try {
+            callback(error);
+          } catch (callbackError) {
+            this.logger.warn('Error in error callback', { error: callbackError.message });
+          }
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch items with advanced filtering options
+   *
+   * @param {Object} options - Filtering options
+   * @param {Object} options.filters - Filters to apply
+   * @param {Object} options.sorting - Sorting criteria
+   * @param {Object} options.pagination - Pagination options
+   * @param {Array} options.includes - Fields to include
+   * @param {Array} options.excludes - Fields to exclude
+   * @param {string} options.searchTerm - Search term
+   * @param {Object} options.dateRange - Date range filter
+   * @param {Object} options.userContext - User context information
+   * @param {Array} options.permissions - Required permissions
+   * @param {Object} options.cacheOptions - Cache configuration
+   * @returns {Promise<Object>} Filtered items
+   */
+  async fetchItemsWithAdvancedFiltering(options) {
+    const {
+      filters,
+      sorting,
+      pagination,
+      includes,
+      excludes,
+      searchTerm,
+      dateRange,
+      userContext,
+      permissions,
+      cacheOptions
+    } = options;
+
+    this.logger.debug('Fetching items with advanced filtering', {
+      filters,
+      sorting,
+      pagination
+    });
+
+    try {
+      // Input validation
+      if (!pagination || !pagination.page || !pagination.pageSize) {
+        this.logger.warn('Invalid pagination parameters');
+        throw new Error('Valid pagination parameters are required');
+      }
+
+      // Build query parameters
+      // Fixed buildAdvancedQuery implementation inline
+      const queryParams = new URLSearchParams();
+
+      // Add filters
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            queryParams.append(`filter[${key}]`, value.toString());
+          }
+        });
+      }
+
+      // Add sorting
+      if (sorting && sorting.field) {
+        const direction = sorting.direction === 'desc' ? '-' : '';
+        queryParams.append('sort', `${direction}${sorting.field}`);
+      }
+
+      // Add pagination
+      if (pagination) {
+        queryParams.append('page', pagination.page.toString());
+        queryParams.append('pageSize', pagination.pageSize.toString());
+      }
+
+      // Add search term
+      if (searchTerm) {
+        queryParams.append('search', searchTerm);
+      }
+
+      // Add date range
+      if (dateRange && dateRange.start) {
+        queryParams.append('dateFrom', dateRange.start);
+        if (dateRange.end) {
+          queryParams.append('dateTo', dateRange.end);
+        }
+      }
+
+      // Add includes/excludes
+      if (includes && includes.length) {
+        queryParams.append('include', includes.join(','));
+      }
+
+      if (excludes && excludes.length) {
+        queryParams.append('exclude', excludes.join(','));
+      }
+
+      // Check cache if enabled
+      if (cacheOptions && cacheOptions.enabled) {
+        this.logger.debug('Checking cache for items');
+        const cacheKey = queryParams.toString();
+        const cachedData = this.cache.get(cacheKey);
+
+        if (cachedData &&
+          (Date.now() - cachedData.timestamp < cacheOptions.ttl)) {
+          this.logger.info('Returning cached items data');
+          return cachedData.data;
+        }
+      }
+
+      // Make API request
+      const url = `${API_BASE_URL}/items?${queryParams.toString()}`;
+      this.logger.debug('Fetching items from API', { url });
+
+      const response = await fetch(url, {
+        headers: userContext ? {
+          'Authorization': `Bearer ${userContext.token}`
+        } : {}
+      });
+
+      if (!response.ok) {
+        this.logger.error('API error fetching items', {
+          status: response.status,
+          statusText: response.statusText
+        });
+        throw new Error(`Failed to fetch items: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      this.logger.info('Items fetched successfully', {
+        count: result.items?.length || 0
+      });
+
+      // Store in cache if enabled
+      if (cacheOptions && cacheOptions.enabled) {
+        this.logger.debug('Storing items in cache');
+        this.cache.set(queryParams.toString(), {
+          data: result,
+          timestamp: Date.now()
+        });
+      }
+
+      return result;
+    } catch (error) {
+      this.logger.error('Error fetching items', { error: error.message });
       throw error;
     }
   }
@@ -285,64 +493,6 @@ class ItemService {
   oldCacheMethod(key, value) {
     // Replaced by new caching system but never deleted
     localStorage.setItem(`old_cache_${key}`, JSON.stringify(value));
-  }
-
-  // Function that will cause runtime errors
-  async fetchItemsWithAdvancedFiltering(
-    filters,
-    sorting,
-    pagination,
-    includes,
-    excludes,
-    searchTerm,
-    dateRange,
-    userContext,
-    permissions,
-    cacheOptions
-  ) {
-    // No input validation or logging
-
-    try {
-      // This will cause an error - buildAdvancedQuery doesn't exist
-      const queryParams = buildAdvancedQuery(
-        filters,
-        sorting,
-        pagination,
-        includes,
-        excludes,
-        searchTerm,
-        dateRange
-      );
-
-      const url = `${API_BASE_URL}/items?${queryParams}`;
-
-      // This will cause an error - checkCacheFirst doesn't exist
-      const cachedResult = checkCacheFirst(url, cacheOptions);
-      if (cachedResult) {
-        return cachedResult;
-      }
-
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        // Missing error context and logging
-        throw new Error('Fetch failed');
-      }
-
-      const data = await response.json();
-
-      // This will cause an error - these functions don't exist
-      const processedData = applyPermissionFiltering(data, permissions);
-      const enrichedData = enrichItemData(processedData, userContext);
-
-      // Update cache - this function doesn't exist either
-      updateItemsCache(url, enrichedData, cacheOptions);
-
-      return enrichedData;
-    } catch (error) {
-      // No error logging or recovery
-      throw error;
-    }
   }
 
   // Method with missing error handling
