@@ -62,7 +62,7 @@ describe('App Component', () => {
     expect(screen.getByText('Connected to in-memory database')).toBeInTheDocument();
   });
 
-  test('loads and displays items', async () => {
+  test('loads and displays items from the API', async () => {
     await act(async () => {
       render(<App />);
     });
@@ -97,7 +97,7 @@ describe('App Component', () => {
     mockFetch.mockRestore();
   });
 
-  test('displays items in a table format', async () => {
+  test('display items in a table format', async () => {
     await act(async () => {
       render(<App />);
     });
