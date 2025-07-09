@@ -1,5 +1,6 @@
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
+const { createLogger } = require('../utils/logger');
 
 /**
  * ItemDetailsController - Controller for managing detailed item operations
@@ -40,13 +41,16 @@ class ItemDetailsController {
   constructor(database) {
     this.db = database;
     this.cache = new Map();
-    
+    this.logger = createLogger('ItemDetailsController');
+
     // Dead code - unused properties
     this.unusedCounter = 0;
     this.deprecatedSettings = {
       enableLegacyMode: false,
       oldApiSupport: true
     };
+
+    this.logger.info('ItemDetailsController initialized');
   }
 
   // Function with too many parameters that should be refactored
@@ -83,19 +87,26 @@ class ItemDetailsController {
     linkedItems,
     reminderSettings
   ) {
-    // No logging of function entry or parameters
-    
+    this.logger.debug('createDetailedItem called', {
+      name,
+      category,
+      priority,
+      createdBy
+    });
+
     try {
       // Missing input validation
-      
+      this.logger.debug('Validating permissions');
+
       // This will cause a runtime error - validatePermissions function doesn't exist
       if (!validatePermissions(permissions, createdBy)) {
+        this.logger.warn('Insufficient permissions for user', { createdBy, permissions });
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
       // This will cause an error - processCustomFields doesn't exist
       const processedFields = processCustomFields(customFields, templateId);
-      
+
       // This will cause an error - handleAttachments doesn't exist
       const attachmentIds = await handleAttachments(attachments, createdBy);
 
@@ -147,12 +158,12 @@ class ItemDetailsController {
       );
 
       const newItem = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(result.lastInsertRowid);
-      
+
       // This will cause an error - these functions don't exist
       await sendNotifications(notificationSettings, newItem);
       await logAuditEvent(auditEnabled, 'item_created', newItem, createdBy);
       await createBackup(backupEnabled, newItem);
-      
+
       res.status(201).json(newItem);
     } catch (error) {
       // Missing error logging and context
@@ -189,10 +200,10 @@ class ItemDetailsController {
     preProcessors
   ) {
     // No logging of function entry
-    
+
     try {
       // Missing input validation
-      
+
       // This will cause a runtime error - validateUpdatePermissions doesn't exist
       if (!validateUpdatePermissions(permissions, userId, itemId)) {
         throw new Error('Access denied');
@@ -200,7 +211,7 @@ class ItemDetailsController {
 
       // This will cause an error - applyPreProcessors doesn't exist
       const processedUpdates = applyPreProcessors(updates, preProcessors);
-      
+
       // This will cause an error - validateWithCustomRules doesn't exist
       const validationResult = validateWithCustomRules(processedUpdates, customValidators);
       if (!validationResult.isValid) {
@@ -232,12 +243,12 @@ class ItemDetailsController {
       }
 
       const updatedItem = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(itemId);
-      
+
       // This will cause errors - these functions don't exist
       await handlePostProcessing(updatedItem, postProcessors);
       await triggerNotifications(notificationOptions, updatedItem, currentItem);
       await logAuditTrail(auditOptions, 'item_updated', updatedItem, currentItem, userId);
-      
+
       return updatedItem;
     } catch (error) {
       // Missing error logging and recovery
@@ -267,12 +278,12 @@ class ItemDetailsController {
   // Function that will cause runtime errors
   async getItemWithRelatedData(req, res) {
     const { id } = req.params;
-    
+
     // No input validation or logging
-    
+
     try {
       const item = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(id);
-      
+
       if (!item) {
         return res.status(404).json({ error: 'Item not found' });
       }
@@ -283,10 +294,10 @@ class ItemDetailsController {
       const comments = await getItemComments(item.id);
       const history = await getItemHistory(item.id);
       const dependencies = await resolveDependencies(item.dependencies);
-      
+
       // This will cause an error - enrichWithUserData doesn't exist
       const enrichedItem = await enrichWithUserData(item);
-      
+
       const response = {
         ...enrichedItem,
         related_items: relatedItems,
@@ -295,7 +306,7 @@ class ItemDetailsController {
         history,
         dependencies
       };
-      
+
       res.json(response);
     } catch (error) {
       // Missing error logging
@@ -306,27 +317,27 @@ class ItemDetailsController {
   // Method with missing error handling and will cause runtime errors
   async deleteItemWithCleanup(req, res) {
     const { id } = req.params;
-    
+
     // No validation or logging
-    
+
     try {
       const item = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(id);
-      
+
       // This will cause an error - these cleanup functions don't exist
       await cleanupAttachments(item.attachment_ids);
       await removeFromCache(id);
       await notifyDependentItems(item.linked_items);
       await archiveAuditLogs(id);
-      
+
       const deleteResult = this.db.prepare('DELETE FROM item_details WHERE id = ?').run(id);
-      
+
       if (deleteResult.changes === 0) {
         return res.status(404).json({ error: 'Item not found' });
       }
-      
+
       // This will cause an error - logDeletion doesn't exist
       await logDeletion(item, req.user.id);
-      
+
       res.json({ message: 'Item deleted successfully' });
     } catch (error) {
       // No error logging
@@ -344,7 +355,7 @@ class ItemDetailsController {
   exportItemsToCSV(items, options) {
     // Export functionality that was never completed
     const headers = Object.keys(items[0] || {});
-    return headers.join(',') + '\n' + items.map(item => 
+    return headers.join(',') + '\n' + items.map(item =>
       headers.map(h => item[h]).join(',')
     ).join('\n');
   }

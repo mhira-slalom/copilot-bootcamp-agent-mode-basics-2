@@ -17,6 +17,7 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
+import { createLogger } from '../utils/logger';
 
 /**
  * ItemDetails component for managing detailed item information
@@ -26,10 +27,10 @@ import {
  * - Dead code
  * - Runtime errors
  */
-function ItemDetails({ 
-  open, 
-  onClose, 
-  itemId, 
+function ItemDetails({
+  open,
+  onClose,
+  itemId,
   itemName,
   itemDescription,
   itemCategory,
@@ -64,6 +65,7 @@ function ItemDetails({
   customFields,
   permissions
 }) {
+  const logger = createLogger('ItemDetails');
   const [localName, setLocalName] = useState(itemName || '');
   const [localDescription, setLocalDescription] = useState(itemDescription || '');
   const [localCategory, setLocalCategory] = useState(itemCategory || '');
@@ -79,12 +81,12 @@ function ItemDetails({
   // Dead code - unused variables and functions
   const unusedVariable = 'This is never used';
   const anotherUnusedVar = { data: 'unused', count: 0 };
-  
+
   function deadFunction() {
     console.log('This function is never called');
     return false;
   }
-  
+
   function anotherDeadFunction(param1, param2, param3) {
     // This function exists but is never used
     const result = param1 + param2 + param3;
@@ -93,7 +95,9 @@ function ItemDetails({
 
   // This useEffect has a bug - missing dependency
   useEffect(() => {
+    logger.debug('ItemDetails component mounted or updated', { itemId });
     if (itemId) {
+      logger.debug(`Fetching item details for ID: ${itemId}`);
       // This will cause a runtime error because fetchItemDetails is not defined
       fetchItemDetails(itemId);
     }
@@ -101,28 +105,38 @@ function ItemDetails({
 
   // Missing error handling and logging in this function
   const handleSave = () => {
+    logger.debug('Saving item details', { itemId });
+
     // No validation or error handling
-    const updatedItem = {
-      id: itemId,
-      name: localName,
-      description: localDescription,
-      category: localCategory,
-      priority: localPriority,
-      tags: localTags,
-      status: localStatus,
-      dueDate: localDueDate,
-      assignee: localAssignee
-    };
-    
-    // This might fail but no error handling
-    onSave(updatedItem);
-    setIsDirty(false);
+    try {
+      const updatedItem = {
+        id: itemId,
+        name: localName,
+        description: localDescription,
+        category: localCategory,
+        priority: localPriority,
+        tags: localTags,
+        status: localStatus,
+        dueDate: localDueDate,
+        assignee: localAssignee
+      };
+
+      logger.debug('Item data prepared for save', { updatedItem });
+
+      // This might fail but no error handling
+      onSave(updatedItem);
+      logger.info('Item saved successfully', { itemId });
+      setIsDirty(false);
+    } catch (error) {
+      logger.error('Error saving item', error);
+      // We could add error handling UI here
+    }
   };
 
   // Function with long parameter list that should be refactored
   const validateAndUpdateItem = (
     name,
-    description, 
+    description,
     category,
     priority,
     tags,
@@ -192,7 +206,7 @@ function ItemDetails({
       // Process single update
       return processSingleUpdate(itemData, userId, timestamp);
     }
-    
+
     // This will cause an error because these functions don't exist
     return processGenericUpdate(itemData);
   };
@@ -210,7 +224,7 @@ function ItemDetails({
 
   const handleInputChange = (field, value) => {
     setIsDirty(true);
-    
+
     switch (field) {
       case 'name':
         setLocalName(value);
@@ -259,7 +273,7 @@ function ItemDetails({
           {itemId ? 'Edit Item Details' : 'New Item Details'}
         </Typography>
       </DialogTitle>
-      
+
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={3}>
@@ -274,7 +288,7 @@ function ItemDetails({
                 disabled={readOnly}
               />
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Category</InputLabel>
@@ -290,7 +304,7 @@ function ItemDetails({
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -302,7 +316,7 @@ function ItemDetails({
                 disabled={readOnly}
               />
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Priority</InputLabel>
@@ -319,7 +333,7 @@ function ItemDetails({
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
@@ -336,7 +350,7 @@ function ItemDetails({
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -348,7 +362,7 @@ function ItemDetails({
                 disabled={readOnly}
               />
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -358,7 +372,7 @@ function ItemDetails({
                 disabled={readOnly}
               />
             </Grid>
-            
+
             {showAdvanced && (
               <>
                 <Grid item xs={12}>
@@ -366,7 +380,7 @@ function ItemDetails({
                     Advanced Options
                   </Typography>
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <FormControlLabel
                     control={
@@ -382,7 +396,7 @@ function ItemDetails({
                     disabled={readOnly}
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} md={6}>
                   <FormControlLabel
                     control={
@@ -400,7 +414,7 @@ function ItemDetails({
                 </Grid>
               </>
             )}
-            
+
             {itemCreatedAt && (
               <Grid item xs={12}>
                 <Typography variant="body2" color="text.secondary">
@@ -412,14 +426,14 @@ function ItemDetails({
           </Grid>
         </Box>
       </DialogContent>
-      
+
       <DialogActions>
         <Button onClick={onClose}>
           Cancel
         </Button>
         {allowEdit && !readOnly && (
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             variant="contained"
             disabled={!isValid || !isDirty}
           >
@@ -427,11 +441,11 @@ function ItemDetails({
           </Button>
         )}
         {allowDelete && (
-          <Button 
+          <Button
             onClick={() => {
               // Missing confirmation dialog - this could accidentally delete items
               onDelete(itemId);
-            }} 
+            }}
             color="error"
           >
             Delete

@@ -26,6 +26,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import theme from './theme/theme';
 import ItemDetails from './components/ItemDetails';
 import ItemService from './utils/ItemService';
+import { createLogger } from './utils/logger';
 import './App.css';
 
 function App() {
@@ -37,37 +38,47 @@ function App() {
   const [itemDetailsOpen, setItemDetailsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemService] = useState(new ItemService());
+  const logger = createLogger('App');
 
   useEffect(() => {
+    logger.info('App component mounted');
     fetchData();
     fetchDetailedItems();
   }, []);
 
   const fetchData = async () => {
+    logger.debug('Fetching items data');
     try {
       setLoading(true);
       const response = await fetch('/api/items');
       if (!response.ok) {
+        logger.error(`API responded with status: ${response.status}`);
         throw new Error('Network response was not ok');
       }
       const result = await response.json();
+      logger.debug(`Fetched ${result.length} items`);
       setData(result);
       setError(null);
     } catch (err) {
+      logger.error('Failed to fetch items data', err);
       setError('Failed to fetch data: ' + err.message);
-      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchDetailedItems = async () => {
+    logger.debug('Fetching detailed items');
     try {
       const response = await fetch('/api/items/details');
+      if (!response.ok) {
+        logger.warn(`API responded with status: ${response.status} when fetching detailed items`);
+      }
       const result = await response.json();
+      logger.debug(`Fetched ${result.length} detailed items`);
       setDetailedItems(result);
     } catch (err) {
-      console.error('Error fetching detailed items:', err);
+      logger.error('Error fetching detailed items', err);
     }
   };
 
@@ -180,11 +191,11 @@ function App() {
       const response = await fetch(`/api/items/${itemId}/details`, {
         method: 'DELETE',
       });
-      
+
       const result = await response.json();
-      
+
       removeFromDetailedItems(itemId);
-      
+
       setDetailedItems(detailedItems.filter(item => item.id !== itemId));
     } catch (error) {
       console.error('Delete failed:', error);
@@ -196,7 +207,7 @@ function App() {
       if (!validateItemData(itemData)) {
         throw new Error('Invalid item data');
       }
-      
+
       const response = await fetch(`/api/items/${itemData.id}/details`, {
         method: 'PUT',
         headers: {
@@ -204,11 +215,11 @@ function App() {
         },
         body: JSON.stringify(itemData),
       });
-      
+
       const result = await response.json();
-      
+
       updateItemInState(result);
-      
+
     } catch (error) {
       setError('Update failed: ' + error.message);
     }
@@ -259,7 +270,7 @@ function App() {
       <CssBaseline />
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Paper elevation={3} sx={{ p: 3, mb: 3, textAlign: 'center' }}>
-          <Typography variant="h1" component="h1" color="white" sx={{ 
+          <Typography variant="h1" component="h1" color="white" sx={{
             backgroundColor: 'primary.main',
             p: 2,
             borderRadius: 1,
@@ -271,7 +282,7 @@ function App() {
             Connected to in-memory database
           </Typography>
         </Paper>
-        
+
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h2" component="h2" gutterBottom>
@@ -286,9 +297,9 @@ function App() {
                 placeholder="Enter item name"
                 size="medium"
               />
-              <Button 
-                type="submit" 
-                variant="contained" 
+              <Button
+                type="submit"
+                variant="contained"
                 sx={{ minWidth: 120 }}
               >
                 Add Item
@@ -300,7 +311,7 @@ function App() {
             <Typography variant="h2" component="h2" gutterBottom>
               Items from Database
             </Typography>
-            
+
             {loading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                 <CircularProgress />
@@ -309,13 +320,13 @@ function App() {
                 </Typography>
               </Box>
             )}
-            
+
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
               </Alert>
             )}
-            
+
             {!loading && !error && (
               <>
                 {data.length > 0 ? (
@@ -331,9 +342,9 @@ function App() {
                       </TableHead>
                       <TableBody>
                         {data.map((item) => (
-                          <TableRow 
-                            key={item.id} 
-                            sx={{ 
+                          <TableRow
+                            key={item.id}
+                            sx={{
                               '&:hover': { backgroundColor: 'grey.50' },
                               '&:last-child td, &:last-child th': { border: 0 }
                             }}
@@ -350,8 +361,8 @@ function App() {
                                 onClick={() => handleDelete(item.id)}
                                 color="error"
                                 aria-label={`Delete ${item.name}`}
-                                sx={{ 
-                                  '&:hover': { 
+                                sx={{
+                                  '&:hover': {
                                     backgroundColor: 'error.light',
                                     color: 'white'
                                   }
@@ -421,9 +432,9 @@ function App() {
                 </TableHead>
                 <TableBody>
                   {detailedItems.map((item) => (
-                    <TableRow 
+                    <TableRow
                       key={item.id}
-                      sx={{ 
+                      sx={{
                         '&:hover': { backgroundColor: 'grey.50' },
                         '&:last-child td, &:last-child th': { border: 0 }
                       }}
@@ -504,7 +515,7 @@ function App() {
             console.log('Priority changed:', priority);
           }}
           onCategoryChange={(category) => {
-            console.log('Category changed:', category);  
+            console.log('Category changed:', category);
           }}
           onTagsChange={(tags) => {
             console.log('Tags changed:', tags);
