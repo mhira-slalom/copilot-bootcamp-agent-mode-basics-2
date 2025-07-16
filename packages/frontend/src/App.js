@@ -25,8 +25,8 @@ import EditIcon from '@mui/icons-material/Edit';
 
 import theme from './theme/theme';
 import ItemDetails from './components/ItemDetails';
-import ItemService from './utils/ItemService';
-import { createLogger } from './utils/logger';
+import ItemService from './utils/ItemService.ts';
+import { createLogger } from './utils/logger.ts';
 import './App.css';
 
 function App() {

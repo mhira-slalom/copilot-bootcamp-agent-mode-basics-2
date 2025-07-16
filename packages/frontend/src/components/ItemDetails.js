@@ -16,7 +16,7 @@ import {
   Switch,
   FormControlLabel,
 } from '@mui/material';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../utils/logger.ts';
 
 /**
  * Validates if the provided string is a valid date
