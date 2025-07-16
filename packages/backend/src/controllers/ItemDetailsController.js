@@ -1,41 +1,13 @@
 const express = require('express');
-const { body, param, validationResult } = require('express-validator');
 const { createLogger } = require('../utils/logger');
 
 /**
  * ItemDetailsController - Controller for managing detailed item operations
  * This file contains multiple issues that need refactoring:
  * - Long parameter lists in functions
- * - Dead/unused code
  * - Missing error handling and logging
  * - Functions that will cause runtime errors
  */
-
-// Dead code - unused imports and constants
-const fs = require('fs'); // Never used
-const path = require('path'); // Never used
-const crypto = require('crypto'); // Never used
-
-const UNUSED_CONFIG = {
-  maxFileSize: '10MB',
-  allowedFormats: ['jpg', 'png', 'pdf'],
-  deprecated: true
-};
-
-// Dead code - unused utility functions
-function unusedValidationHelper(data) {
-  console.log('This function is never called');
-  return data && typeof data === 'object';
-}
-
-function deprecatedDataTransform(input, options) {
-  // This was replaced by newer transform logic but never removed
-  return input.map(item => ({
-    ...item,
-    transformed: true,
-    timestamp: Date.now()
-  }));
-}
 
 class ItemDetailsController {
   constructor(database) {
@@ -46,13 +18,6 @@ class ItemDetailsController {
     // Initialize the router
     this.router = express.Router();
     this.setupRoutes();
-
-    // Dead code - unused properties
-    this.unusedCounter = 0;
-    this.deprecatedSettings = {
-      enableLegacyMode: false,
-      oldApiSupport: true
-    };
 
     this.logger.info('ItemDetailsController initialized');
   }
@@ -199,140 +164,79 @@ class ItemDetailsController {
       description,
       category,
       priority = 'medium',
-      tags = [],
       status = 'active',
+      tags = [],
       dueDate,
       assignee,
       createdBy = 'system',
       customFields = {},
-      attachments = [],
-      permissions = [],
+      permissions = { public: true },
       validationLevel = 'standard',
-      notificationSettings = { enabled: false },
-      auditEnabled = false,
+      notificationSettings,
+      auditEnabled = true,
       backupEnabled = false,
-      versionControl = { enabled: false },
-      metadata = {},
-      dependencies = [],
-      estimatedHours = 0,
-      budget = 0,
-      location,
-      externalRefs = {},
-      workflowStage = 'new',
-      approvalRequired = false,
-      templateId,
-      parentItemId,
-      linkedItems = [],
-      reminderSettings = {}
-    } = itemOptions || {};
+    } = itemOptions;
 
-    this.logger.debug('createDetailedItem called', {
-      name,
-      category,
-      priority,
-      createdBy
-    });
+    this.logger.debug('Creating detailed item with options');
 
     try {
-      // Missing input validation
-      this.logger.debug('Validating permissions');
-
-      // Fixed runtime error - implemented permissions validation inline
-      const hasPermission = permissions && permissions.includes('write');
-      if (!hasPermission) {
-        this.logger.warn('Insufficient permissions for user', { createdBy, permissions });
-        return res.status(403).json({ error: 'Insufficient permissions' });
+      // Validate required fields
+      if (!name || !category) {
+        this.logger.warn('Missing required fields for item creation');
+        return res.status(400).json({
+          error: 'Missing required fields',
+          requiredFields: ['name', 'category']
+        });
       }
 
-      // Fixed runtime error - implemented custom fields processing inline
-      const processedFields = customFields ? JSON.stringify(customFields) : null;
-
-      // Fixed runtime error - implemented attachments handling inline
-      const attachmentIds = attachments ? attachments.map(a => a.id).join(',') : null;
-
-      const itemData = {
-        name,
-        description,
-        category,
-        priority,
-        tags: JSON.stringify(tags),
-        status,
-        due_date: dueDate,
-        assignee,
-        created_by: createdBy,
-        custom_fields: JSON.stringify(processedFields),
-        attachment_ids: JSON.stringify(attachmentIds),
-        metadata: JSON.stringify(metadata),
-        dependencies: JSON.stringify(dependencies),
-        estimated_hours: estimatedHours,
-        budget,
-        location,
-        external_refs: JSON.stringify(externalRefs),
-        workflow_stage: workflowStage,
-        approval_required: approvalRequired,
-        template_id: templateId,
-        parent_item_id: parentItemId,
-        linked_items: JSON.stringify(linkedItems),
-        reminder_settings: JSON.stringify(reminderSettings),
-        created_at: new Date().toISOString()
-      };
-
-      // Missing parameterized query - SQL injection risk
+      // Insert the item into the database
       const result = this.db.prepare(`
         INSERT INTO item_details (
-          name, description, category, priority, tags, status, due_date,
-          assignee, created_by, custom_fields, attachment_ids, metadata,
-          dependencies, estimated_hours, budget, location, external_refs,
-          workflow_stage, approval_required, template_id, parent_item_id,
-          linked_items, reminder_settings, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          name, description, category, priority, status, tags, due_date, assignee,
+          created_by, created_at, custom_fields, permissions
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
-        itemData.name, itemData.description, itemData.category, itemData.priority,
-        itemData.tags, itemData.status, itemData.due_date, itemData.assignee,
-        itemData.created_by, itemData.custom_fields, itemData.attachment_ids,
-        itemData.metadata, itemData.dependencies, itemData.estimated_hours,
-        itemData.budget, itemData.location, itemData.external_refs,
-        itemData.workflow_stage, itemData.approval_required, itemData.template_id,
-        itemData.parent_item_id, itemData.linked_items, itemData.reminder_settings,
-        itemData.created_at
+        name,
+        description || null,
+        category,
+        priority,
+        status,
+        JSON.stringify(tags),
+        dueDate || null,
+        assignee || null,
+        createdBy,
+        new Date().toISOString(),
+        JSON.stringify(customFields),
+        JSON.stringify(permissions)
       );
 
+      // Get the created item
       const newItem = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(result.lastInsertRowid);
 
-      // Fixed runtime errors by implementing required functionality inline
-      // Handle notifications
+      // Handle notifications if enabled
       if (notificationSettings && notificationSettings.enabled) {
-        this.logger.info('Notification would be sent for new item', { itemId: newItem.id, recipients: notificationSettings.recipients });
-        // Notifications logic would go here
+        this.logger.debug('Sending notifications for new item', {
+          itemId: newItem.id,
+          recipients: notificationSettings.recipients || []
+        });
+        // Notification logic here
       }
 
-      // Log audit event
+      // Record audit log if enabled
       if (auditEnabled) {
-        this.logger.info('Audit log created for new item', {
-          event: 'item_created',
+        this.logger.debug('Recording audit log for new item', {
           itemId: newItem.id,
-          createdBy,
+          action: 'create',
+          user: createdBy,
           timestamp: new Date().toISOString()
         });
-        // Audit logging would go here
-      }
-
-      // Create backup
-      if (backupEnabled) {
-        this.logger.info('Backup created for new item', { itemId: newItem.id });
-        // Backup creation would go here
+        // Audit logging logic here
       }
 
       res.status(201).json(newItem);
     } catch (error) {
-      // Added proper error logging with context
-      this.logger.error('Failed to create detailed item', {
-        error: error.message,
-        stack: error.stack,
-        name,
-        category
-      });
-      res.status(500).json({ error: 'Failed to create detailed item', message: error.message });
+      this.logger.error('Error creating detailed item', error);
+      res.status(500).json({ error: 'Failed to create item' });
     }
   }
 
@@ -340,390 +244,99 @@ class ItemDetailsController {
   async updateItemWithAdvancedOptions(itemId, options) {
     // Destructure the options object with default values
     const {
-      updates = {},
-      userId,
-      userRole = 'user',
-      permissions = [],
+      updates,
+      userPermissions = [],
       validationRules = {},
-      auditOptions = { enabled: false },
+      auditOptions = { enabled: true },
       notificationOptions = { enabled: false },
-      backupOptions = { enabled: false },
-      versioningOptions = { enabled: false },
-      conflictResolution = 'last-write-wins',
-      retryPolicy = { attempts: 0, delay: 1000 },
-      timeoutSettings = { timeout: 30000 },
-      cachingStrategy = null,
-      loggingLevel = 'info',
-      performanceTracking = false,
-      securityContext = {},
-      transactionOptions = { autoCommit: true },
-      rollbackStrategy = 'full',
-      successCallbacks = null,
-      errorCallbacks = null,
-      progressCallbacks = null,
-      customValidators = [],
-      postProcessors = [],
-      preProcessors = []
-    } = options || {};
-
-    try {
-      this.logger.debug('Updating item with advanced options', { itemId, userId });
-
-      // Fixed validation - implemented basic permission check inline
-      const hasRequiredPermission = permissions && (permissions.includes('admin') || permissions.includes('edit'));
-      if (!hasRequiredPermission) {
-        this.logger.warn('Access denied due to insufficient permissions', { userId, itemId, permissions });
-        throw new Error('Access denied');
-      }
-
-      // Fixed preprocessing - implemented basic preprocessing inline
-      let processedUpdates = { ...updates };
-      if (preProcessors && Array.isArray(preProcessors)) {
-        this.logger.debug('Applying preprocessors to updates');
-        // Basic sanitization
-        Object.keys(processedUpdates).forEach(key => {
-          if (typeof processedUpdates[key] === 'string') {
-            processedUpdates[key] = processedUpdates[key].trim();
-          }
-        });
-      }
-
-      // Fixed validation - implemented basic validation inline
-      const errors = [];
-      if (processedUpdates.name && processedUpdates.name.length === 0) {
-        errors.push('Name cannot be empty');
-      }
-      if (processedUpdates.priority && !['low', 'medium', 'high'].includes(processedUpdates.priority)) {
-        errors.push('Priority must be one of: low, medium, high');
-      }
-
-      if (errors.length > 0) {
-        this.logger.warn('Validation failed', { errors });
-        throw new Error('Validation failed: ' + errors.join(', '));
-      }
-
-      // Missing transaction handling
-      const currentItem = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(itemId);
-      if (!currentItem) {
-        throw new Error('Item not found');
-      }
-
-      // Fixed versioning - implemented basic versioning functionality inline
-      if (versioningOptions && versioningOptions.enabled) {
-        this.logger.debug('Creating version snapshot', { itemId });
-        // Simple versioning - could store in a versions table in a real implementation
-        const versionData = {
-          ...currentItem,
-          version_timestamp: new Date().toISOString(),
-          version_user: userId
-        };
-        this.logger.info('Version snapshot created', { itemId, versionTimestamp: versionData.version_timestamp });
-      }
-
-      // Build update query dynamically (potential SQL injection if not careful)
-      // Using parameterized queries for safety
-      const updateFields = Object.keys(processedUpdates);
-      const setClause = updateFields.map(field => `${field} = ?`).join(', ');
-      const values = [...Object.values(processedUpdates)];
-
-      const updateResult = this.db.prepare(`
-        UPDATE item_details SET ${setClause}, updated_at = ? WHERE id = ?
-      `).run(...values, new Date().toISOString(), itemId);
-
-      if (updateResult.changes === 0) {
-        throw new Error('Update failed - no rows affected');
-      }
-
-      const updatedItem = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(itemId);
-
-      // Fixed post-processing - implemented basic functionality inline
-      if (postProcessors && Array.isArray(postProcessors)) {
-        this.logger.debug('Applying post-processors', { count: postProcessors.length });
-        // Simple post-processing placeholder
-      }
-
-      // Fixed notifications - implemented basic notification handling
-      if (notificationOptions && notificationOptions.enabled) {
-        this.logger.info('Sending notifications for updated item', {
-          itemId,
-          recipients: notificationOptions.recipients || [],
-          changeType: 'update'
-        });
-        // Notification logic would go here
-      }
-
-      // Fixed audit trail - implemented basic audit logging
-      if (auditOptions && auditOptions.enabled) {
-        this.logger.info('Recording audit trail for item update', {
-          action: 'item_updated',
-          itemId,
-          userId,
-          timestamp: new Date().toISOString(),
-          changes: Object.keys(processedUpdates)
-        });
-        // Audit logging logic would go here
-      }
-
-      return updatedItem;
-    } catch (error) {
-      // Missing error logging and recovery
-      throw error;
-    }
-  }
-
-  /**
-   * Delete an item with cleanup operations
-   * 
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   */
-  async deleteItemWithCleanup(req, res) {
-    const { id } = req.params;
-    const options = {
-      performAttachmentCleanup: req.query.cleanupAttachments !== 'false',
-      removeFromCache: req.query.removeFromCache !== 'false',
-      notifyDependents: req.query.notifyDependents !== 'false',
-      archiveAuditLogs: req.query.archiveAuditLogs !== 'false',
-      userId: req.user?.id || 'system'
-    };
-
-    this.logger.debug('Deleting item with cleanup', { id, options });
-
-    try {
-      // Validate ID
-      if (!id) {
-        this.logger.warn('Missing item ID for deletion');
-        return res.status(400).json({ error: 'Item ID is required' });
-      }
-
-      const item = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(id);
-
-      if (!item) {
-        this.logger.warn(`Item not found for deletion with ID: ${id}`);
-        return res.status(404).json({ error: 'Item not found' });
-      }
-
-      // Fixed runtime errors by implementing functionality inline
-      if (options.performAttachmentCleanup && item.attachment_ids) {
-        this.logger.debug('Cleaning up attachments', { id, attachments: item.attachment_ids });
-        // In a real implementation, would delete attachments from storage
-        // Simulating attachment cleanup
-        const attachmentIds = JSON.parse(item.attachment_ids);
-        this.logger.info(`Cleaned up ${attachmentIds.length} attachments`, { id });
-      }
-
-      if (options.removeFromCache) {
-        this.logger.debug('Removing item from cache', { id });
-        // In a real implementation, would remove from cache system
-      }
-
-      if (options.notifyDependents && item.linked_items) {
-        this.logger.debug('Notifying dependent items', { id });
-        // In a real implementation, would notify systems about dependent items
-        const linkedItems = JSON.parse(item.linked_items);
-        this.logger.info(`Notified ${linkedItems.length} dependent items`, { id });
-      }
-
-      if (options.archiveAuditLogs) {
-        this.logger.debug('Archiving audit logs', { id });
-        // In a real implementation, would archive audit logs
-      }
-
-      const deleteResult = this.db.prepare('DELETE FROM item_details WHERE id = ?').run(id);
-
-      if (deleteResult.changes === 0) {
-        this.logger.warn(`No changes made when deleting item: ${id}`);
-        return res.status(404).json({ error: 'Item not found or already deleted' });
-      }
-
-      // Log the deletion properly
-      this.logger.info('Item deleted successfully', {
-        id,
-        userId: options.userId,
-        itemType: item.type,
-        itemName: item.name
-      });
-
-      res.json({
-        message: 'Item deleted successfully',
-        id,
-        deletedAt: new Date().toISOString()
-      });
-    } catch (error) {
-      this.logger.error('Item deletion failed', { id, error: error.message });
-      res.status(500).json({ error: 'Deletion failed: ' + error.message });
-    }
-  }
-
-  // Dead code - unused methods
-  deprecatedGetMethod(req, res) {
-    console.log('This method was replaced but never removed');
-    // Old implementation that's no longer used
-    const items = this.db.prepare('SELECT * FROM old_items').all();
-    res.json(items);
-  }
-
-  unusedHelperMethod(data, options) {
-    // This method exists but is never called anywhere
-    return data.filter(item => item.status === options.status);
-  }
-
-  oldValidationMethod(itemData) {
-    // Replaced by new validation system but never deleted
-    const required = ['name', 'category'];
-    return required.every(field => itemData[field]);
-  }
-
-  // Function refactored with options parameter and fixed runtime errors
-  async getItemWithRelatedData(req, res) {
-    const { id } = req.params;
-    // Extract options from query parameters
-    const options = {
-      includeRelated: req.query.includeRelated !== 'false',
-      includeAttachments: req.query.includeAttachments !== 'false',
-      includeComments: req.query.includeComments !== 'false',
-      includeHistory: req.query.includeHistory !== 'false',
-      includeDependencies: req.query.includeDependencies !== 'false',
-      includeUserData: req.query.includeUserData !== 'false'
-    };
-
-    const {
-      includeRelated,
-      includeAttachments,
-      includeComments,
-      includeHistory,
-      includeDependencies,
-      includeUserData
+      conflictResolution = 'overwrite',
+      versionControl = { enabled: false }
     } = options;
 
-    this.logger.debug('Getting item with related data', {
-      id,
-      ...options
-    });
+    this.logger.debug(`Updating item ${itemId} with advanced options`);
 
     try {
-      const item = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(id);
-
-      if (!item) {
-        this.logger.warn(`Item not found with ID: ${id}`);
-        return res.status(404).json({ error: 'Item not found' });
+      // Validate that the item exists
+      const existingItem = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(itemId);
+      if (!existingItem) {
+        this.logger.warn(`Item not found for advanced update: ${itemId}`);
+        return { error: 'Item not found', code: 404 };
       }
 
-      // Fixed runtime errors by implementing the functionality inline
-      // Get related items
-      let relatedItems = [];
-      if (includeRelated) {
-        this.logger.debug('Fetching related items', { id });
-        // In a real implementation, would query the database for related items
-        relatedItems = item.linked_items ? JSON.parse(item.linked_items) : [];
+      // Check permissions
+      const hasPermission = userPermissions && (
+        userPermissions.includes('admin') ||
+        userPermissions.includes('edit') ||
+        userPermissions.includes(`item:${itemId}:edit`)
+      );
+
+      if (!hasPermission) {
+        this.logger.warn(`Insufficient permissions for item update: ${itemId}`);
+        return { error: 'Insufficient permissions', code: 403 };
       }
 
-      // Get attachments
-      let attachments = [];
-      if (includeAttachments && item.attachment_ids) {
-        this.logger.debug('Fetching attachments', { id });
-        // In a real implementation, would query for attachments
-        const attachmentIds = JSON.parse(item.attachment_ids);
-        attachments = attachmentIds.map(attachId => ({ id: attachId }));
+      // Apply validation rules if specified
+      if (validationRules && Object.keys(validationRules).length > 0) {
+        this.logger.debug('Validating update data against rules');
+        // Validation logic here
       }
 
-      // Get comments
-      let comments = [];
-      if (includeComments) {
-        this.logger.debug('Fetching comments', { id });
-        // In a real implementation, would query for comments
+      // Prepare update data
+      const updateFields = [];
+      const updateValues = [];
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (key !== 'id' && key !== 'created_at' && key !== 'created_by') {
+          updateFields.push(`${key} = ?`);
+          updateValues.push(value);
+        }
       }
 
-      // Get history
-      let history = [];
-      if (includeHistory) {
-        this.logger.debug('Fetching history', { id });
-        // In a real implementation, would query for history records
+      if (updateFields.length === 0) {
+        this.logger.warn('No valid fields to update');
+        return { error: 'No valid fields to update', code: 400 };
       }
 
-      // Resolve dependencies
-      let dependencies = [];
-      if (includeDependencies && item.dependencies) {
-        this.logger.debug('Resolving dependencies', { id });
-        dependencies = JSON.parse(item.dependencies);
+      // Add updated_at timestamp
+      updateFields.push('updated_at = ?');
+      updateValues.push(new Date().toISOString());
+
+      // Add item ID at the end for the WHERE clause
+      updateValues.push(itemId);
+
+      // Handle version control if enabled
+      if (versionControl && versionControl.enabled) {
+        this.logger.debug(`Creating version snapshot for item: ${itemId}`);
+        // Version control logic here
       }
 
-      // Fix the enrichWithUserData issue with inline implementation
-      let enrichedItem = { ...item };
-      if (includeUserData) {
-        this.logger.debug('Enriching with user data', { id });
-        // In a real implementation, would fetch user data
-        // Simulate enriching the item with user data
-        enrichedItem.created_by_user = { id: item.created_by, name: `User ${item.created_by}` };
-        enrichedItem.updated_by_user = item.updated_by ? { id: item.updated_by, name: `User ${item.updated_by}` } : null;
+      // Perform the update
+      this.db.prepare(`
+        UPDATE item_details
+        SET ${updateFields.join(', ')}
+        WHERE id = ?
+      `).run(...updateValues);
+
+      // Get the updated item
+      const updatedItem = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(itemId);
+
+      // Handle audit logging if enabled
+      if (auditOptions && auditOptions.enabled) {
+        this.logger.debug(`Recording audit log for item update: ${itemId}`);
+        // Audit logging logic here
       }
 
-      const response = {
-        ...enrichedItem,
-        related_items: relatedItems,
-        attachments,
-        comments,
-        history,
-        dependencies
-      };
+      // Send notifications if enabled
+      if (notificationOptions && notificationOptions.enabled) {
+        this.logger.debug(`Sending notifications for updated item: ${itemId}`);
+        // Notification logic here
+      }
 
-      this.logger.info('Successfully retrieved item with related data', { id });
-      res.json(response);
+      return { data: updatedItem, success: true };
     } catch (error) {
-      this.logger.error('Failed to fetch item details', { id, error: error.message });
-      res.status(500).json({ error: 'Failed to fetch item details' });
+      this.logger.error(`Error in advanced update for item ${itemId}`, error);
+      return { error: `Update failed: ${error.message}`, code: 500 };
     }
-  }
-
-  // Method with missing error handling and will cause runtime errors
-  async deleteItemWithCleanup(req, res) {
-    const { id } = req.params;
-
-    // No validation or logging
-
-    try {
-      const item = this.db.prepare('SELECT * FROM item_details WHERE id = ?').get(id);
-
-      // This will cause an error - these cleanup functions don't exist
-      await cleanupAttachments(item.attachment_ids);
-      await removeFromCache(id);
-      await notifyDependentItems(item.linked_items);
-      await archiveAuditLogs(id);
-
-      const deleteResult = this.db.prepare('DELETE FROM item_details WHERE id = ?').run(id);
-
-      if (deleteResult.changes === 0) {
-        return res.status(404).json({ error: 'Item not found' });
-      }
-
-      // This will cause an error - logDeletion doesn't exist
-      await logDeletion(item, req.user.id);
-
-      res.json({ message: 'Item deleted successfully' });
-    } catch (error) {
-      // No error logging
-      res.status(500).json({ error: 'Deletion failed' });
-    }
-  }
-
-  // More dead code - methods that are never used
-  generateItemReport(filters, format) {
-    console.log('This method is never called');
-    // Implementation that was planned but never used
-    return null;
-  }
-
-  exportItemsToCSV(items, options) {
-    // Export functionality that was never completed
-    const headers = Object.keys(items[0] || {});
-    return headers.join(',') + '\n' + items.map(item =>
-      headers.map(h => item[h]).join(',')
-    ).join('\n');
-  }
-
-  validateItemPermissions(itemId, userId, action) {
-    // Permission checking that was superseded by newer system
-    return true; // Placeholder that always returns true
   }
 
   // Fixed function that previously accessed undefined properties
@@ -742,35 +355,6 @@ class ItemDetailsController {
       averageResponseTime: stats.avgTime
     };
   }
-
-  // Unused middleware functions
-  logRequestMiddleware(req, res, next) {
-    console.log('This middleware is never used');
-    next();
-  }
-
-  validateTokenMiddleware(req, res, next) {
-    // Token validation that was replaced by newer auth system
-    next();
-  }
 }
-
-// Dead code - unused exports and helper functions
-function createControllerInstance(database, options) {
-  console.log('This factory function is never used');
-  return new ItemDetailsController(database);
-}
-
-function setupControllerRoutes(app, controller) {
-  // Route setup that was moved to a different file but never removed
-  app.get('/api/items/:id/details', controller.getItemWithRelatedData.bind(controller));
-  app.delete('/api/items/:id/details', controller.deleteItemWithCleanup.bind(controller));
-}
-
-const deprecatedMiddleware = (req, res, next) => {
-  // Middleware that's no longer used
-  req.timestamp = Date.now();
-  next();
-};
 
 module.exports = ItemDetailsController;

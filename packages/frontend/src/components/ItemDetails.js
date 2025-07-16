@@ -9,7 +9,6 @@ import {
   Grid,
   Typography,
   Box,
-  Chip,
   FormControl,
   InputLabel,
   Select,
@@ -20,11 +19,38 @@ import {
 import { createLogger } from '../utils/logger';
 
 /**
+ * Validates if the provided string is a valid date
+ * 
+ * @param {string} dateString - The date string to validate
+ * @returns {boolean} - True if the date is valid, false otherwise
+ */
+const validateDate = (dateString) => {
+  if (!dateString) return false;
+
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
+};
+
+/**
+ * Formats a date string into a readable format
+ * 
+ * @param {string} dateString - The date string to format
+ * @returns {string} - The formatted date string
+ */
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid date';
+
+  return date.toLocaleString();
+};
+
+/**
  * ItemDetails component for managing detailed item information
  * This component has several issues that need refactoring:
  * - Long parameter lists
  * - Missing error handling and logging
- * - Dead code
  * - Runtime errors
  */
 function ItemDetails({
@@ -77,21 +103,6 @@ function ItemDetails({
   const [errors, setErrors] = useState({});
   const [isValid, setIsValid] = useState(true);
   const [isDirty, setIsDirty] = useState(false);
-
-  // Dead code - unused variables and functions
-  const unusedVariable = 'This is never used';
-  const anotherUnusedVar = { data: 'unused', count: 0 };
-
-  function deadFunction() {
-    console.log('This function is never called');
-    return false;
-  }
-
-  function anotherDeadFunction(param1, param2, param3) {
-    // This function exists but is never used
-    const result = param1 + param2 + param3;
-    return result * 2;
-  }
 
   // Fixed runtime error and added missing dependency
   useEffect(() => {
@@ -212,63 +223,145 @@ function ItemDetails({
       return processSingleUpdate(itemData, userId, timestamp);
     }
 
-    // This will cause an error because these functions don't exist
+    // Process generic update instead of undefined function
     return processGenericUpdate(itemData);
   };
 
-  // Dead code - unused event handlers
-  const handleUnusedClick = () => {
-    console.log('This handler is never attached to any element');
-  };
+  /**
+   * Process a bulk update for multiple items
+   * 
+   * @param {Object} itemData - The item data to update
+   * @param {string} userId - The ID of the user performing the update
+   * @param {Object} permissions - User permissions
+   * @returns {Promise<Object>} - The result of the update
+   */
+  const processBulkUpdate = (itemData, userId, permissions) => {
+    logger.debug('Processing bulk update', { userId, items: itemData.length });
 
-  const handleAnotherUnusedEvent = (event) => {
-    event.preventDefault();
-    // More unused code
-    return false;
-  };
-
-  const handleInputChange = (field, value) => {
-    setIsDirty(true);
-
-    switch (field) {
-      case 'name':
-        setLocalName(value);
-        // Missing validation and logging
-        onNameChange(value);
-        break;
-      case 'description':
-        setLocalDescription(value);
-        onDescriptionChange(value);
-        break;
-      case 'category':
-        setLocalCategory(value);
-        onCategoryChange(value);
-        break;
-      case 'priority':
-        setLocalPriority(value);
-        onPriorityChange(value);
-        break;
-      case 'status':
-        setLocalStatus(value);
-        onStatusChange(value);
-        break;
-      case 'dueDate':
-        setLocalDueDate(value);
-        onDueDateChange(value);
-        break;
-      case 'assignee':
-        setLocalAssignee(value);
-        onAssigneeChange(value);
-        break;
-      default:
-        // No logging of unhandled cases
-        break;
+    try {
+      // Placeholder for actual bulk update logic
+      return Promise.resolve({
+        success: true,
+        updatedCount: Array.isArray(itemData) ? itemData.length : 0
+      });
+    } catch (error) {
+      logger.error('Error in bulk update', { error });
+      return Promise.reject(error);
     }
   };
 
-  // This will cause a runtime error because formatDateTime is not defined
+  /**
+   * Process a single item update
+   * 
+   * @param {Object} itemData - The item data to update
+   * @param {string} userId - The ID of the user performing the update
+   * @param {string} timestamp - The timestamp of the update
+   * @returns {Promise<Object>} - The result of the update
+   */
+  const processSingleUpdate = (itemData, userId, timestamp) => {
+    logger.debug('Processing single update', { userId, itemId: itemData.id });
+
+    try {
+      // Placeholder for actual single update logic
+      return Promise.resolve({
+        success: true,
+        updatedItem: { ...itemData, updatedAt: timestamp, updatedBy: userId }
+      });
+    } catch (error) {
+      logger.error('Error in single update', { error });
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * Process a generic update for an item
+   * 
+   * @param {Object} itemData - The item data to update
+   * @returns {Promise<Object>} - The result of the update
+   */
+  const processGenericUpdate = (itemData) => {
+    logger.debug('Processing generic update', { itemId: itemData.id });
+
+    try {
+      // Placeholder for actual generic update logic
+      return Promise.resolve({ success: true, updatedItem: itemData });
+    } catch (error) {
+      logger.error('Error in generic update', { error });
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * Handles changes to input fields
+   * 
+   * @param {string} field - The name of the field that changed
+   * @param {any} value - The new value of the field
+   */
+  const handleInputChange = (field, value) => {
+    logger.debug('Input field changed', { field, value });
+    setIsDirty(true);
+
+    try {
+      switch (field) {
+        case 'name':
+          setLocalName(value);
+          if (typeof onNameChange === 'function') {
+            onNameChange(value);
+          }
+          break;
+        case 'description':
+          setLocalDescription(value);
+          if (typeof onDescriptionChange === 'function') {
+            onDescriptionChange(value);
+          }
+          break;
+        case 'category':
+          setLocalCategory(value);
+          if (typeof onCategoryChange === 'function') {
+            onCategoryChange(value);
+          }
+          break;
+        case 'priority':
+          setLocalPriority(value);
+          if (typeof onPriorityChange === 'function') {
+            onPriorityChange(value);
+          }
+          break;
+        case 'status':
+          setLocalStatus(value);
+          if (typeof onStatusChange === 'function') {
+            onStatusChange(value);
+          }
+          break;
+        case 'dueDate':
+          setLocalDueDate(value);
+          if (typeof onDueDateChange === 'function') {
+            onDueDateChange(value);
+          }
+          break;
+        case 'assignee':
+          setLocalAssignee(value);
+          if (typeof onAssigneeChange === 'function') {
+            onAssigneeChange(value);
+          }
+          break;
+        default:
+          logger.warn('Unhandled input field', { field });
+          break;
+      }
+    } catch (error) {
+      logger.error('Error handling input change', { field, error });
+    }
+  };
+
+  /**
+   * Formats a created date for display
+   * 
+   * @param {string} date - The date string to format
+   * @returns {string} - The formatted date string
+   */
   const formatCreatedDate = (date) => {
-    return formatDateTime(date, 'yyyy-MM-dd HH:mm');
+    return formatDateTime(date);
   };
 
   return (
